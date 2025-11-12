@@ -164,6 +164,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       id: user.id,
       username: user.username,
       name: user.name,
+      avatar_url: avatarUrl,
       created_at: user.created_at
     });
   } catch (error) {
