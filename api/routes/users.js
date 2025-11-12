@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
   try {
     const { data: users, error } = await supabase
       .from('users')
-      .select('id, username, name, created_at');
+      .select('id, username, name, created_at, avatar_path');
 
     if (error) {
       return res.status(500).json({ errors: error.message });
