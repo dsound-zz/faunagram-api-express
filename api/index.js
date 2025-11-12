@@ -31,6 +31,11 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Allow localhost for development (any port)
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);
+    }
+    
     // Also check for Vercel preview deployments
     if (origin.includes('.vercel.app')) {
       return callback(null, true);
