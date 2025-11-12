@@ -177,7 +177,37 @@ router.get('/:id/comments', async (req, res) => {
       return res.status(500).json({ errors: error.message });
     }
 
-    res.json(comments);
+    // Add user info to nested comments
+    const commentsWithUsers = await Promise.all(
+      comments.map(async (comment) => {
+        const { data: user } = await supabase
+          .from('users')
+          .select('id, username, name, avatar_path')
+          .eq('id', comment.user_id)
+          .single();
+
+        let avatarUrl = null;
+        if (user?.avatar_path) {
+          const { data: avatarData } = await supabase.storage
+            .from(process.env.SUPABASE_BUCKET || 'faunagram')
+            .getPublicUrl(`avatars/${user.avatar_path}`);
+          avatarUrl = avatarData?.publicUrl;
+        }
+
+        return {
+          ...comment,
+          username: comment.username || user?.username,
+          user: user ? {
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            avatar_url: avatarUrl,
+          } : null,
+        };
+      })
+    );
+
+    res.json(commentsWithUsers);
   } catch (error) {
     console.error('Get nested comments error:', error);
     res.status(500).json({ errors: 'Internal server error' });
