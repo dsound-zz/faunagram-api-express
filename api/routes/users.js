@@ -3,6 +3,7 @@ const router = express.Router();
 const supabase = require('../../config/database');
 const bcrypt = require('bcryptjs');
 const { authenticateToken } = require('../../middleware/auth');
+const { encodeToken } = require('../../utils/jwt');
 const multer = require('multer');
 
 // Configure multer for memory storage
@@ -109,14 +110,27 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ errors: error.message });
     }
 
+    // Generate token for new user
+    const token = encodeToken(user.id);
+
+    // Get avatar URL if exists
+    let avatarUrl = null;
+    if (user.avatar_path) {
+      const { data: avatarData } = await supabase.storage
+        .from(process.env.SUPABASE_BUCKET || 'faunagram')
+        .getPublicUrl(`avatars/${user.avatar_path}`);
+      avatarUrl = avatarData?.publicUrl;
+    }
+
     const userResponse = {
       id: user.id,
       username: user.username,
       name: user.name,
+      avatar_url: avatarUrl,
       created_at: user.created_at
     };
 
-    res.status(201).json(userResponse);
+    res.status(201).json({ user: userResponse, token });
   } catch (error) {
     console.error('Create user error:', error);
     res.status(500).json({ errors: 'Internal server error' });
