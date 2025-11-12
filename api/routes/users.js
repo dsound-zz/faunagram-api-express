@@ -45,7 +45,7 @@ router.get('/:id', async (req, res) => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, username, name, created_at')
+      .select('id, username, name, created_at, avatar_path')
       .eq('id', req.params.id)
       .single();
 
@@ -54,14 +54,21 @@ router.get('/:id', async (req, res) => {
     }
 
     // Add avatar URL if exists
+    let avatarUrl = null;
     if (user.avatar_path) {
       const { data: avatarData } = await supabase.storage
         .from(process.env.SUPABASE_BUCKET || 'faunagram')
         .getPublicUrl(`avatars/${user.avatar_path}`);
-      user.avatar_url = avatarData?.publicUrl;
+      avatarUrl = avatarData?.publicUrl;
     }
 
-    res.json(user);
+    res.json({
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      avatar_url: avatarUrl,
+      created_at: user.created_at
+    });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ errors: 'Internal server error' });
